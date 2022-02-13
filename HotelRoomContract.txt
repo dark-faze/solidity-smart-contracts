@@ -1,0 +1,43 @@
+pragma solidity ^0.8.0;
+
+contract HotelRoomContract{
+
+    //State Variable (Will be written in the blockchain)
+    //Owner can recieve payment 
+    address payable public owner;
+
+
+    //Gives status of the room
+    enum Statuses { Vacant , Occupied }
+    Statuses currentStatus;
+    
+    event Occupy(address _occupant , uint _value);
+
+    //Will run only one time when the smart contract will be created
+    constructor(){  
+        owner = payable(msg.sender); 
+        currentStatus = Statuses.Vacant;
+    }
+    
+    //This modifier can do the same check for the book function
+    modifier onlyWhileVacant {
+       require(currentStatus == Statuses.Vacant, "Currently Occupied");
+       _;
+    }
+    
+    modifier costs(uint _amount) {
+        require(msg.value >= _amount , "Not Enough Ether");
+        _;
+    }
+    
+    //receive is a special function that get called when you pay the smart contract
+    receive() external payable onlyWhileVacant costs(1 ether) {
+        //Check Price
+        // require(msg.value >= 1 ether , "Not Enough Ether") ;
+        //Check Status
+        // require(currentStatus == Statuses.Vacant, "Currently Occupied");
+        currentStatus = Statuses.Occupied;
+        owner.transfer(msg.value);
+        emit Occupy(msg.sender, msg.value);
+    }
+}
